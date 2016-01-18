@@ -139,7 +139,12 @@ if (typeof jQuery === 'undefined') {
                                 input += '</select>';
                             } else {
                                 // Create text input element.
-                                var input = '<input class="tabledit-input ' + settings.inputClass + '" type="text" name="' + settings.columns.editable[i][1] + '" value="' + $(this).text() + '" style="display: none;" disabled>';
+								if(setting.columns.editable[i][1]=='time'){
+									var input = '<input class="tabledit-input form_datetime' + settings.inputClass + '" type="text" name="' + settings.columns.editable[i][1] + '" value="' + $(this).text() + '" style="display: none;" disabled>';
+								}else{
+									var input = '<input class="tabledit-input ' + settings.inputClass + '" type="text" name="' + settings.columns.editable[i][1] + '" value="' + $(this).text() + '" style="display: none;" disabled>';
+								}
+                                
                             }
 
                             // Add elements and class "view" to table cell.
@@ -368,8 +373,8 @@ if (typeof jQuery === 'undefined') {
          * @param {string} action
          */
         function ajax(action)
-        {
-            var serialize = $table.find('.tabledit-input').serialize() + '&action=' + action;
+        {					//solve the Chinese garbled
+            var serialize = encodeURL(decodeURIComponent($table.find('.tabledit-input').serialize())) + '&action=' + action;
 
             var result = settings.onAjax(action, serialize);
 
@@ -377,7 +382,11 @@ if (typeof jQuery === 'undefined') {
                 return false;
             }
 
-            var jqXHR = $.post(settings.url, serialize, function(data, textStatus, jqXHR) {
+            var jqXHR = $.ajax({
+				type:'POST',
+				url:settings.url,
+				data:serialize,
+				success:function(data, textStatus, jqXHR) {
                 if (action === settings.buttons.edit.action) {
                     $lastEditedRow.removeClass(settings.dangerClass).addClass(settings.warningClass);
                     setTimeout(function() {
@@ -387,7 +396,11 @@ if (typeof jQuery === 'undefined') {
                 }
 
                 settings.onSuccess(data, textStatus, jqXHR);
-            }, 'json');
+            }, 
+				dataType:'json',
+				// add contentType
+				contentType:'application/x-www-form-urlencoded; charset=UTF-8'
+			});
 
             jqXHR.fail(function(jqXHR, textStatus, errorThrown) {
                 if (action === settings.buttons.delete.action) {
